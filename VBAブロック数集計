@@ -1,52 +1,91 @@
 Sub ExtractDataFromAllCompanies()
-    ' マクロ開始：全会社フォルダを走査して各月の「合計」行からブロック数を抽出し、
-    ' 指定のシートに出力する処理を行います。
 
-    Dim fso As Object                 ' FileSystemObject を格納する変数（フォルダ/ファイル操作用）
-    Dim baseDir As String             ' 検索対象のルートフォルダパス
-    Dim companyFolder As Object       ' 各会社フォルダを表すオブジェクト
-    Dim targetMonths As Variant       ' 抽出対象の年月を格納する配列
-    Dim month As Variant              ' ループ用の月（配列要素）
-    Dim fileName As String            ' 期待するファイル名（組み立て用）
-    Dim fullPath As String            ' ファイルのフルパス（会社フォルダ + ファイル名）
-    Dim wbSource As Workbook          ' 開いた元ブック（読み取り専用）
-    Dim wsSource As Worksheet         ' 元ブック内の対象シート（"アクセスサマリ"）
-    Dim destSheet As Worksheet       ' 抽出結果を書き込むシート（ThisWorkbook 内）
-    Dim currentRow As Long            ' 出力先シートの現在行（書き込み位置）
-    Dim targetRow As Long             ' 元シート内の「合計」行の行番号
-
-    ' このマクロは運用レポートフォルダを指定するとその中のエクセルを確認してブロック数を抽出するマクロです。
-
-    ' 出力先のルートフォルダを指定（必要に応じて変更してください）
-    baseDir = "C:\WORK\Test"
-
-    ' 取得する年月を配列で指定（yyyymm 形式）
+    Dim fso As Object
+    Dim baseDir As String
+    Dim companyFolder As Object
+    Dim targetMonths As Variant
+    Dim month As Variant
+    Dim fileName As String
+    Dim fullPath As String
+    Dim wbSource As Workbook
+    Dim wsSource As Worksheet
+    Dim destSheet As Worksheet
+    Dim currentRow As Long
+    Dim targetRow As Long
+    
+    'このマクロは運用レポートフォルダを指定するとその中のエクセルを確認してブロック数を抽出できるマクロです。
+    
+    'ここでフォルダを指定するとフォルダの中のエクセルから 合計 行の値を取得して block シートに出力します。
+    baseDir = "C:\WORK\08_2_運用レポート(NEDO)"
+    
+    '取得する月はここで指定します
     targetMonths = Array("202510", "202511", "202512", "202601", "202602", "202603")
-
-    ' 出力先シートを指定（ThisWorkbook の 2 番目のシート）
     Set destSheet = ThisWorkbook.Sheets(2)
-
-    ' 出力シートを初期化（既存データを消す）
+    
+    ' シートの初期化と見出し作成
     destSheet.Cells.Clear
-
-    ' 見出しを A1:E1 に設定（列名を分かりやすく）
     destSheet.Range("A1:E1").Value = Array("会社名", "年月", "URLブロック数 合計", "FILEブロック数 合計", "CATEGORYブロック数 合計")
-    destSheet.Range("A1:E1").Font.Bold = True   ' 見出しを太字にする
-
-    currentRow = 2   ' データ書き込み開始行を 2 行目に設定（1 行目は見出し）
-
-    ' FileSystemObject を作成（フォルダ・ファイル操作に使用）
+    destSheet.Range("A1:E1").Font.Bold = True
+    currentRow = 2
+    
     Set fso = CreateObject("Scripting.FileSystemObject")
-
-    ' 画面更新と警告をオフにして処理を高速化・煩雑なダイアログを抑制
+    
     Application.ScreenUpdating = False
-    Application.DisplayAlerts = False ' リンク更新などの警告を非表示にする
-
-    ' 1. baseDir の直下にある各会社フォルダをループ
+    Application.DisplayAlerts = False ' リンク更新などの警告を非表示
+    
+    ' 1. 各会社のフォルダをループ
     For Each companyFolder In fso.GetFolder(baseDir).SubFolders
-
-        ' 2. 指定した年月（targetMonths）をループして各月のファイルを探す
+        
+        ' 2. 指定した年月をループ
         For Each month In targetMonths
-            ' 期待するファイル名を組み立てる（会社名と年月を元に）
-            ' 例: 【月次レポート】株式会社堂鳩様_202510.xlsx
-            fileName = "【月次レポート】
+            ' ファイル名の組み立て（例：【月次レポート】株式会社堂鳩様_202510.xlsx）
+            fileName = "【月次レポート】" & companyFolder.Name & "様_" & month & ".xlsx"
+            fullPath = companyFolder.path & "\" & fileName
+            
+            ' ファイルが存在するか確認
+            If fso.FileExists(fullPath) Then
+                Set wbSource = Nothing
+                On Error Resume Next
+                Set wbSource = Workbooks.Open(fileName:=fullPath, ReadOnly:=True)
+                On Error GoTo 0
+                
+                If Not wbSource Is Nothing Then
+                    Set wsSource = Nothing
+                    On Error Resume Next
+                    Set wsSource = wbSource.Sheets("アクセスサマリ")
+                    On Error GoTo 0
+                    
+                    If Not wsSource Is Nothing Then
+                        ' 「合計」行を探す
+                        targetRow = 0
+                        On Error Resume Next
+                        targetRow = wsSource.Columns("A").Find(What:="合計", LookIn:=xlValues, LookAt:=xlWhole).Row
+                        On Error GoTo 0
+                        
+                        ' データをシートに書き込み
+                        destSheet.Cells(currentRow, 1).Value = companyFolder.Name
+                        destSheet.Cells(currentRow, 2).Value = month
+                        
+                        If targetRow > 0 Then
+                            destSheet.Cells(currentRow, 3).Value = wsSource.Cells(targetRow, "C").Value
+                            destSheet.Cells(currentRow, 4).Value = wsSource.Cells(targetRow, "D").Value
+                            destSheet.Cells(currentRow, 5).Value = wsSource.Cells(targetRow, "E").Value
+                        Else
+                            destSheet.Cells(currentRow, 3).Value = "合計行なし"
+                        End If
+                    Else
+                        destSheet.Cells(currentRow, 1).Value = companyFolder.Name
+                        destSheet.Cells(currentRow, 2).Value = month & " (シートなし)"
+                    End If
+                    wbSource.Close SaveChanges:=False
+                    currentRow = currentRow + 1
+                End If
+            End If
+        Next month
+    Next companyFolder
+    
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    
+    MsgBox "すべての会社のデータ抽出が完了しました。", vbInformation
+End Sub
