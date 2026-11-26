@@ -1,0 +1,33 @@
+﻿{
+  "settings": {
+    "width": 380,
+    "height": 500,
+    "fontName": "Meiryo UI",
+    "fontSize": 11,
+    "itemHeight": 36,
+    "position": "bottomRight"
+  },
+  "サイト": [
+    { "name": "google", "path": "https://www.google.co.jp/" },
+    { "name": "youtube", "path": "https://www.youtube.com/?app=desktop&hl=ja" },
+    { "name": "アマプラ", "path": "https://www.amazon.co.jp/gp/video/collection/IncludedwithPrime" },
+    { "name": "ネットフリックス", "path": "https://www.netflix.com/" },
+    { "name": "copilot", "path": "https://copilot.microsoft.com/" },
+    { "name": "gemini", "path": "https://gemini.google.com/app?hl=ja" },
+    { "name": "tver", "path": "https://tver.jp/" },
+    { "name": "株edition", "path": "https://edition.cnn.com/markets/fear-and-greed" }
+    
+  ],
+  "フォルダ": [
+    { "name": "Downloads", "path": "%USERPROFILE%\\Downloads" },
+    { "name": "ドキュメント", "path": "%USERPROFILE%\\Documents" },
+    { "name": "スタートアップ", "path": "shell:startup" }
+  ],
+  "アプリ": [
+    { "name": "メモ帳", "path": "notepad.exe" },
+    { "name": "電卓", "path": "calc.exe" },
+    { "name": "VS Code", "path": "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe" },
+    { "name": "Excel", "path": "EXCEL.EXE" },
+    { "name": "特定ファイルを開く", "path": "notepad.exe", "args": "C:\\Work\\memo.txt" }
+  ]
+}
